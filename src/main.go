@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gomarkdown/markdown"
+	"github.com/otiai10/copy"
 )
 
 var EDITOR string = "/usr/bin/vi"
@@ -212,6 +213,8 @@ func assemble_posts() {
 	for _, post := range posts {
 		post := post.Name()
 
+		os.RemoveAll(POST_DIR + "/" + post + "/index.html")
+
 		html_output, err := os.OpenFile(
 			DRAFT_DIR+"/"+post+"/index.html",
 			os.O_APPEND|os.O_CREATE|os.O_WRONLY,
@@ -260,6 +263,7 @@ func assemble_posts() {
 		check(err)
 	}
 
+	backup_posts(POST_DIR)
 	build_index()
 }
 
@@ -292,6 +296,11 @@ func delete_post() {
 	}
 
 	fmt.Println("moved post " + post_name + " to draft dir")
+}
+
+func backup_posts(dir string) {
+	err := copy.Copy(dir, BACKUP_DIR)
+	check(err)
 }
 
 func main() {
