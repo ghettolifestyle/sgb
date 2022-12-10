@@ -27,9 +27,10 @@ usage: sgb {
 ### options
 
 + `n` creates a new directory with a stripped title of your choice containing a markdown file `in.md`. the title is either prompted for or passed as an argument to `n`
-+ `e` moves an assembled post from the post directory `out/p/` back to the drafts directory `drafts/` and opens vim
++ `p` publishes your drafts to the post directory `out/p/`
++ `e` moves an assembled post from the post directory back to the drafts directory `drafts/` and opens vim
 + `d` removes an assembled post from the post directory
-+ `f` fetches post files from your remote web server to the draft directory, erasing the generated post html files and the remote directory in the process
++ `f` fetches post files from your remote web server and places them in the draft directory, erasing the generated post html files and the remote directory in the process
 + `s` syncs local published posts to your remote web server
 
 ### directory structure
