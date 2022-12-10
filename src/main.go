@@ -15,18 +15,19 @@ import (
 	"github.com/otiai10/copy"
 )
 
-var EDITOR string = "/usr/bin/vi"
-var WORKING_DIR string = "/Users/m/Documents/blog"
-var BACKUP_DIR string = WORKING_DIR + "/bak"
-var DRAFT_DIR string = WORKING_DIR + "/drafts"
-var TEMPLATE_DIR string = WORKING_DIR + "/templates"
-var OUT_DIR string = WORKING_DIR + "/out"
-var POST_DIR string = OUT_DIR + "/p"
-var REMOTE_ROOT_DIR string = "/var/static"
+var EDITOR = "/usr/bin/vi"
+var USER_DIR, _ = os.UserHomeDir()
+var WORKING_DIR = USER_DIR + "/Documents/blog"
+var BACKUP_DIR = WORKING_DIR + "/bak"
+var DRAFT_DIR = WORKING_DIR + "/drafts"
+var TEMPLATE_DIR = WORKING_DIR + "/templates"
+var OUT_DIR = WORKING_DIR + "/out"
+var POST_DIR = OUT_DIR + "/p"
+var REMOTE_ROOT_DIR = "/var/static"
 
-var SSH_USER string = "root"
-var SSH_HOST string = "kmai.xyz"
-var SSH_PORT int = 22
+var SSH_USER = "root"
+var SSH_HOST = "kmai.xyz"
+var SSH_PORT = 22
 
 func check(err error) {
 	if err != nil {
