@@ -16,7 +16,7 @@ import (
 
 var EDITOR string = "/usr/bin/vi"
 var WORKING_DIR string = "/Users/m/Documents/blog"
-var BACKUP_DIR string = "/Users/m/Documents/blog-bak"
+var BACKUP_DIR string = WORKING_DIR + "/bak"
 var DRAFT_DIR string = WORKING_DIR + "/drafts"
 var TEMPLATE_DIR string = WORKING_DIR + "/templates"
 var OUT_DIR string = WORKING_DIR + "/out"
@@ -276,6 +276,8 @@ func edit_post() {
 
 	fmt.Println("moved post " + post_name + " to draft dir")
 	os.RemoveAll(DRAFT_DIR + "/" + post_name + "/index.html")
+
+	launch_editor(EDITOR, DRAFT_DIR+"/"+post_name+"/in.md")
 }
 
 func delete_post() {
@@ -314,6 +316,7 @@ func main() {
 		fmt.Printf("\td(elete): delete an existing post\n")
 		fmt.Printf("\tp(ublish): move drafts to post directory\n")
 		fmt.Printf("\tf(etch): fetch posts from remote host\n")
+		fmt.Printf("\ts(ync): use rsync to push local posts to remote web server\n")
 		fmt.Println("}")
 		os.Exit(1)
 	}
