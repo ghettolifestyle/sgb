@@ -22,7 +22,7 @@ var BACKUP_DIR = WORKING_DIR + "/bak"
 var DRAFT_DIR = WORKING_DIR + "/drafts"
 var TEMPLATE_DIR = WORKING_DIR + "/templates"
 var OUT_DIR = WORKING_DIR + "/out"
-var POST_DIR = OUT_DIR + "/p"
+var postDir = OUT_DIR + "/p"
 var REMOTE_ROOT_DIR = "/var/static"
 
 var SSH_USER = "root"
@@ -36,24 +36,24 @@ func check(err error) {
 	}
 }
 
-func sync_posts() {
-	rsync_arguments := OUT_DIR + "/* " + SSH_USER + "@" + SSH_HOST + ":" + REMOTE_ROOT_DIR + "/"
+func syncPosts() {
+	rsyncArgs := OUT_DIR + "/* " + SSH_USER + "@" + SSH_HOST + ":" + REMOTE_ROOT_DIR + "/"
 
-	cmd := exec.Command("bash", "-c", "rsync -e \"ssh -i $HOME/.ssh/id_ed25519\" -a "+rsync_arguments)
+	cmd := exec.Command("bash", "-c", "rsync -e \"ssh -i $HOME/.ssh/id_ed25519\" -a "+rsyncArgs)
 	err := cmd.Run()
 	check(err)
 }
 
-func fetch_posts() {
-	posts, _ := os.ReadDir(POST_DIR)
+func fetchPosts() {
+	posts, _ := os.ReadDir(postDir)
 
 	for _, post := range posts {
-		os.RemoveAll(POST_DIR + "/" + post.Name())
+		os.RemoveAll(postDir + "/" + post.Name())
 	}
 
-	rsync_arguments := SSH_USER + "@" + SSH_HOST + ":" + REMOTE_ROOT_DIR + "/p/ " + DRAFT_DIR + "/"
+	rsyncArgs := SSH_USER + "@" + SSH_HOST + ":" + REMOTE_ROOT_DIR + "/p/ " + DRAFT_DIR + "/"
 
-	cmd := exec.Command("bash", "-c", "rsync -e \"ssh -i $HOME/.ssh/id_ed25519\" -a "+rsync_arguments)
+	cmd := exec.Command("bash", "-c", "rsync -e \"ssh -i $HOME/.ssh/id_ed25519\" -a "+rsyncArgs)
 	err := cmd.Run()
 	check(err)
 
@@ -77,7 +77,7 @@ func build_atom() {
 	os.WriteFile(OUT_DIR+"/atom.xml", atom_head, 0644)
 }
 
-func launch_editor(editor string, file string) {
+func launchEditor(editor string, file string) {
 	cmd := exec.Command(editor, file)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -87,7 +87,7 @@ func launch_editor(editor string, file string) {
 }
 
 func select_post(prompt string) string {
-	posts, err := os.ReadDir(POST_DIR)
+	posts, err := os.ReadDir(postDir)
 	check(err)
 
 	for index, post := range posts {
@@ -102,25 +102,28 @@ func select_post(prompt string) string {
 	selection, err := strconv.Atoi(strings.ReplaceAll(buf, "\n", ""))
 	check(err)
 
-	return POST_DIR + "/" + posts[selection].Name()
+	return postDir + "/" + posts[selection].Name()
 }
 
-func create_post(title string) {
-	nonalphanumeric_regexp := regexp.MustCompile(`\W`)
-	multi_underscore_regexp := regexp.MustCompile(`[_]{2,}`)
+func createPost(title string) {
+	nonalphanumericRegexp := regexp.MustCompile(`\W`)
+	multiUnderscoreRegexp := regexp.MustCompile(`[_]{2,}`)
 
 	title = strings.ReplaceAll(title, "\n", "")
 	date := strconv.FormatInt(time.Now().Unix(), 10)
 	buf := []byte(strings.ReplaceAll(title, " ", "_"))
-	formatted_title := nonalphanumeric_regexp.ReplaceAll(buf, []byte(""))
-	formatted_title = multi_underscore_regexp.ReplaceAll(formatted_title, []byte("_"))
-	fmt.Println(string(formatted_title))
+	formattedTitle := nonalphanumericRegexp.ReplaceAll(buf, []byte(""))
+	formattedTitle = multiUnderscoreRegexp.ReplaceAll(formattedTitle, []byte("_"))
+	fmt.Println(string(formattedTitle))
 
-	post_dir := DRAFT_DIR + "/" + string(formatted_title)
-	post_file := post_dir + "/in.md"
+	postDir := DRAFT_DIR + "/" + string(formattedTitle)
+	postFile := postDir + "/in.md"
 
-	os.Mkdir(post_dir, 0755)
-	file, err := os.OpenFile(post_file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	os.Mkdir(postDir, 0755)
+	file, err := os.OpenFile(
+		postFile,
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+		0644)
 	check(err)
 
 	defer file.Close()
@@ -131,117 +134,117 @@ func create_post(title string) {
 
 	fmt.Println("created post " + title + " in draft dir")
 
-	launch_editor(EDITOR, post_file)
+	launchEditor(EDITOR, postFile)
 }
 
-func build_index() {
+func buildIndex() {
 	// remove old index file
 	os.RemoveAll(OUT_DIR + "/index.html")
 
-	posts, err := os.ReadDir(POST_DIR)
+	posts, err := os.ReadDir(postDir)
 	check(err)
 
 	sort.Slice(posts, func(i, j int) bool {
-		file_info_i, _ := posts[i].Info()
-		file_info_j, _ := posts[j].Info()
-		return file_info_i.ModTime().After(file_info_j.ModTime())
+		fileInfoI, _ := posts[i].Info()
+		fileInfoJ, _ := posts[j].Info()
+		return fileInfoI.ModTime().After(fileInfoJ.ModTime())
 	})
 
-	index_file, err := os.OpenFile(
+	indexFile, err := os.OpenFile(
 		OUT_DIR+"/index.html",
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
 		0644)
 	check(err)
-	defer index_file.Close()
+	defer indexFile.Close()
 
-	head_html, err := os.ReadFile(TEMPLATE_DIR + "/head_index.html")
+	headHtml, err := os.ReadFile(TEMPLATE_DIR + "/head_index.html")
 	check(err)
-	index_file.Write(head_html)
+	indexFile.Write(headHtml)
 
-	index_file.WriteString("<p>some words on pages about stuff</p>\n")
-	index_file.WriteString("<h2>posts</h2>\n")
-	index_file.WriteString("<ul id=\"posts\">\n")
+	indexFile.WriteString("<p>some words on pages about stuff</p>\n")
+	indexFile.WriteString("<h2>posts</h2>\n")
+	indexFile.WriteString("<ul id=\"posts\">\n")
 
 	for _, post := range posts {
-		post_name := post.Name()
-		post_file, err := os.OpenFile(
-			POST_DIR+"/"+post_name+"/in.md",
+		postName := post.Name()
+		postFile, err := os.OpenFile(
+			postDir+"/"+postName+"/in.md",
 			os.O_RDONLY,
 			0644)
 		check(err)
 
 		// read first line of markdown input containing the post title
 		// remove leading hashtag using slice
-		scanner := bufio.NewScanner(post_file)
+		scanner := bufio.NewScanner(postFile)
 		scanner.Scan()
-		post_title := scanner.Text()[2:]
+		postTitle := scanner.Text()[2:]
 
 		// read second line of markdown containing post date
 		// in epoch format wrapped by span, e.g. <span class="date">1234567890</span>
 		// use compiled regex to remove the span tags
 		scanner.Scan()
-		post_date := scanner.Text()
-		date_regex := regexp.MustCompile(`[0-9]{10}`)
+		postDate := scanner.Text()
+		dateRegexp := regexp.MustCompile(`[0-9]{10}`)
 		// convert regex result to byte array to pass to Find(), then convert back to string
-		regex_result := string(date_regex.Find([]byte(post_date)))
+		regexpResult := string(dateRegexp.Find([]byte(postDate)))
 		// convert epoch date string to int64 in decimal
 		// goal is to pass this int64 to time.Unix() to get proper Time type
-		regex_result_int64, err := strconv.ParseInt(regex_result, 10, 64)
+		regexpResultInt64, err := strconv.ParseInt(regexpResult, 10, 64)
 		check(err)
 
-		formatted_date := strings.ToLower(time.Unix(regex_result_int64, 0).Format("Jan 02, 2006"))
+		formattedDate := strings.ToLower(time.Unix(regexpResultInt64, 0).Format("Jan 02, 2006"))
 
 		// set atime, mtime to epoch timestamp first generated when post was created
 		// allows sorting when index file is built and post list is generated
 
-		post_file.Close()
+		postFile.Close()
 
-		index_file.WriteString("<li><a href=\"p/" + post_name + "\">" + post_title + "</a>\n")
-		index_file.WriteString("<span class=\"date\">" + formatted_date + "</span></li>\n")
+		indexFile.WriteString("<li><a href=\"p/" + postName + "\">" + postTitle + "</a>\n")
+		indexFile.WriteString("<span class=\"date\">" + formattedDate + "</span></li>\n")
 	}
 
-	index_file.WriteString("</ul>\n")
+	indexFile.WriteString("</ul>\n")
 
-	foot_html, err := os.ReadFile(TEMPLATE_DIR + "/foot_index.html")
+	footHtml, err := os.ReadFile(TEMPLATE_DIR + "/foot_index.html")
 	check(err)
-	index_file.Write(foot_html)
+	indexFile.Write(footHtml)
 }
 
-func assemble_posts() {
+func assemblePosts() {
 	posts, err := os.ReadDir(DRAFT_DIR)
 	check(err)
 
 	for _, post := range posts {
 		post := post.Name()
 
-		os.RemoveAll(POST_DIR + "/" + post + "/index.html")
+		os.RemoveAll(postDir + "/" + post + "/index.html")
 
-		html_output, err := os.OpenFile(
+		htmlOutput, err := os.OpenFile(
 			DRAFT_DIR+"/"+post+"/index.html",
 			os.O_APPEND|os.O_CREATE|os.O_WRONLY,
 			0644)
 		check(err)
-		defer html_output.Close()
+		defer htmlOutput.Close()
 
-		head_html, err := os.ReadFile(
+		headHtml, err := os.ReadFile(
 			TEMPLATE_DIR + "/head_post.html")
 		check(err)
-		html_output.WriteString(string(head_html))
+		htmlOutput.WriteString(string(headHtml))
 
-		markdown_input, err := os.ReadFile(
+		markdownInput, err := os.ReadFile(
 			DRAFT_DIR + "/" + post + "/in.md")
 		check(err)
-		html_output.WriteString(string(markdown.ToHTML(markdown_input, nil, nil)))
+		htmlOutput.WriteString(string(markdown.ToHTML(markdownInput, nil, nil)))
 
-		foot_html, err := os.ReadFile(
+		footHtml, err := os.ReadFile(
 			TEMPLATE_DIR + "/foot_post.html")
 		check(err)
-		html_output.WriteString(string(foot_html))
+		htmlOutput.WriteString(string(footHtml))
 
-		os.Rename(DRAFT_DIR+"/"+post, POST_DIR+"/"+post)
+		os.Rename(DRAFT_DIR+"/"+post, postDir+"/"+post)
 
 		buf, err := os.OpenFile(
-			POST_DIR+"/"+post+"/in.md",
+			postDir+"/"+post+"/in.md",
 			os.O_RDONLY,
 			0644)
 		check(err)
@@ -251,52 +254,52 @@ func assemble_posts() {
 		// throw first line aka the title away
 		scanner.Scan()
 		scanner.Scan()
-		post_date := scanner.Text()
-		epoch_regexp := regexp.MustCompile(`[0-9]{10}`)
-		epoch_date, _ := strconv.ParseInt(
+		postDate := scanner.Text()
+		epochRegexp := regexp.MustCompile(`[0-9]{10}`)
+		epochDate, _ := strconv.ParseInt(
 			string(
-				epoch_regexp.Find(
-					[]byte(post_date))), 10, 64)
+				epochRegexp.Find(
+					[]byte(postDate))), 10, 64)
 
-		err = os.Chtimes(POST_DIR+"/"+post,
-			time.Unix(epoch_date, 0),
-			time.Unix(epoch_date, 0))
+		err = os.Chtimes(postDir+"/"+post,
+			time.Unix(epochDate, 0),
+			time.Unix(epochDate, 0))
 		check(err)
 	}
 
-	backup_posts(POST_DIR)
-	build_index()
+	backup_posts(postDir)
+	buildIndex()
 }
 
-func edit_post() {
+func editPost() {
 	post := select_post("post to edit> ")
-	split_path := strings.Split(post, "/")
-	post_name := split_path[len(split_path)-1]
+	splitPath := strings.Split(post, "/")
+	postName := splitPath[len(splitPath)-1]
 
-	err := os.Rename(POST_DIR+"/"+post_name, DRAFT_DIR+"/"+post_name)
+	err := os.Rename(postDir+"/"+postName, DRAFT_DIR+"/"+postName)
 
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("moved post " + post_name + " to draft dir")
-	os.RemoveAll(DRAFT_DIR + "/" + post_name + "/index.html")
+	fmt.Println("moved post " + postName + " to draft dir")
+	os.RemoveAll(DRAFT_DIR + "/" + postName + "/index.html")
 
-	launch_editor(EDITOR, DRAFT_DIR+"/"+post_name+"/in.md")
+	launchEditor(EDITOR, DRAFT_DIR+"/"+postName+"/in.md")
 }
 
-func delete_post() {
+func deletePost() {
 	post := select_post("post to delete> ")
-	split_path := strings.Split(post, "/")
-	post_name := split_path[len(split_path)-1]
+	splitPath := strings.Split(post, "/")
+	postName := splitPath[len(splitPath)-1]
 
-	err := os.RemoveAll(POST_DIR + "/" + post_name)
+	err := os.RemoveAll(postDir + "/" + postName)
 
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("moved post " + post_name + " to draft dir")
+	fmt.Println("moved post " + postName + " to draft dir")
 }
 
 func backup_posts(dir string) {
@@ -307,7 +310,7 @@ func backup_posts(dir string) {
 func main() {
 	cwd, _ := os.Getwd()
 
-	for _, dir := range []string{BACKUP_DIR, DRAFT_DIR, POST_DIR} {
+	for _, dir := range []string{BACKUP_DIR, DRAFT_DIR, postDir} {
 		// throw away returned value if it's not an error
 		// we simply want to check if the directory exists or not
 		if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -337,7 +340,7 @@ func main() {
 	case "n":
 		if len(os.Args) > 2 {
 			title := os.Args[2]
-			create_post(title)
+			createPost(title)
 		} else {
 			reader := bufio.NewReader(os.Stdin)
 			fmt.Print("> ")
@@ -347,19 +350,19 @@ func main() {
 				panic(err)
 			}
 
-			create_post(title)
+			createPost(title)
 		}
 	case "e":
-		edit_post()
+		editPost()
 	case "d":
-		delete_post()
+		deletePost()
 	case "p":
-		assemble_posts()
+		assemblePosts()
 	case "f":
-		fetch_posts()
+		fetchPosts()
 	case "s":
-		sync_posts()
+		syncPosts()
 	}
 
-	build_index()
+	buildIndex()
 }
